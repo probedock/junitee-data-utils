@@ -1,0 +1,5 @@
+project:
+  apiId: nb3d7qjx48nk
+  version: ${project.version}
+  
+server: demo.probedock.io
