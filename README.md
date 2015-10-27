@@ -12,7 +12,7 @@
   <artifactId>junitee-data-utils</artifactId>
   <version>1.0.0</version>
   <scope>test</scope>
-</dependenc>
+</dependency>
 ```
 
 ### Requirements
