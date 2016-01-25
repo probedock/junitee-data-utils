@@ -30,7 +30,7 @@ In addition, you can inject any EJB inside your data generators and finders thro
 <dependency>
   <groupId>io.probedock.test</groupId>
   <artifactId>junitee-data-utils</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <scope>test</scope>
 </dependency>
 ```
