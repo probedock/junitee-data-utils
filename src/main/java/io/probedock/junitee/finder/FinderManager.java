@@ -1,12 +1,14 @@
 package io.probedock.junitee.finder;
 
+import io.probedock.junitee.annotations.Finder;
 import io.probedock.junitee.generator.DataGeneratorManager;
 import io.probedock.junitee.dependency.DependencyInjector;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+
+import io.probedock.junitee.utils.EntityManagerHolder;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -28,9 +30,9 @@ public class FinderManager implements TestRule {
 	private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorManager.class);
 	
 	/**
-	 * Entity manager factory to create new entity managers
+	 * Entity manager holder to manage the entity managers and their factories
 	 */
-	private EntityManagerFactory entityManagerFactory;
+	private EntityManagerHolder entityManagerHolder;
 
 	/**
 	 * Keep track of the finders
@@ -38,12 +40,13 @@ public class FinderManager implements TestRule {
 	private Map<Class, IFinder> finders = new HashMap<>();
 	
 	/**
-	 * Force the construction of the data generator with an entity manager
+	 * Force the construction of the data generator with an one or more entity manager factory
 	 * 
-	 * @param entityManagerFactory Entity manager factory to use
+	 * @param entityManagerHolder Entity manager holder to use
 	 */
-	public FinderManager(EntityManagerFactory entityManagerFactory) {
-		this.entityManagerFactory = entityManagerFactory;
+	public FinderManager(EntityManagerHolder entityManagerHolder) {
+		this.entityManagerHolder = entityManagerHolder;
+		this.entityManagerHolder.build();
 	}
 
 	@Override
@@ -81,8 +84,7 @@ public class FinderManager implements TestRule {
 	 * Instantiate the finders
 	 * 
 	 * @param description The description to get test data
-	 * @param context The generator context
-	 * @throws Throwable Any errors 
+	 * @throws Throwable Any errors
 	 */
 	private void manageFinders(Description description) throws FinderException {
 		// Clear the finders used in a previous test. Clear must be there because 
@@ -95,11 +97,11 @@ public class FinderManager implements TestRule {
 			return;
 		}
 		
-		// Create the entity manager from the factory. One entity manager is created by test executed.
-		EntityManager entityManager = entityManagerFactory.createEntityManager();
-		
 		// Retrieve all the data generators defined for the test method.
 		for (Class<? extends IFinder> finderClass : finderAnnotation.value()) {
+			// Retrieve the entity manager corresponding to the finder
+			EntityManager entityManager = entityManagerHolder.retrieveEntityManagerFromFinder(finderClass);
+
 			// Check if the data generator is already instantiated.
 			if (!finders.containsKey(finderClass)) {
 				// Instantiate a new data generator, inject the DAO and keep track of it.

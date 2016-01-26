@@ -1,4 +1,4 @@
-package io.probedock.junitee.generator;
+package io.probedock.junitee.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

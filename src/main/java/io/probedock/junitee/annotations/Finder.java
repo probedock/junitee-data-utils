@@ -1,4 +1,6 @@
-package io.probedock.junitee.finder;
+package io.probedock.junitee.annotations;
+
+import io.probedock.junitee.finder.IFinder;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

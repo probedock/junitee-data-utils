@@ -1,4 +1,8 @@
-package io.probedock.junitee.generator;
+package io.probedock.junitee.utils;
+
+import io.probedock.junitee.finder.IFinder;
+import io.probedock.junitee.annotations.EntityManagerName;
+import io.probedock.junitee.generator.IDataGenerator;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -27,6 +31,11 @@ public class EntityManagerHolder {
     private final Map<String, EntityManager> managers = new HashMap<>();
 
     /**
+     * Flag to only build once
+     */
+    private boolean built = false;
+
+    /**
      * Constructor
      *
      * @param defaultFactory The default factory is mandatory
@@ -39,9 +48,15 @@ public class EntityManagerHolder {
         factories.put(DEFAULT, defaultFactory);
     }
 
-    void build() {
-        for (Map.Entry<String, EntityManagerFactory> e : factories.entrySet()) {
-            managers.put(e.getKey(), e.getValue().createEntityManager());
+    /**
+     * Build the holder to be ready to use in different managers
+     */
+    public synchronized void build() {
+        if (!built) {
+            for (Map.Entry<String, EntityManagerFactory> e : factories.entrySet()) {
+                managers.put(e.getKey(), e.getValue().createEntityManager());
+            }
+            built = true;
         }
     }
 
@@ -81,6 +96,43 @@ public class EntityManagerHolder {
         }
 
         return managers.get(name);
+    }
+
+    /**
+     * Retrieve an entity manager corresponding to the data generator
+     *
+     * @param dgClass The data generator class
+     * @return The corresponding entity manager
+     */
+    public EntityManager retrieveEntityManagerFromDataGenerator(Class<? extends IDataGenerator> dgClass) {
+        return retrieveEntityManager(dgClass);
+    }
+
+    /**
+     * Retrieve an entity manager corresponding to the finder
+     *
+     * @param fClass The finder class
+     * @return The corresponding entity manager
+     */
+    public EntityManager retrieveEntityManagerFromFinder(Class<? extends IFinder> fClass) {
+        return retrieveEntityManager(fClass);
+    }
+
+    /**
+     * Retrieve the entity manager corresponding to the data manager
+     *
+     * @param cl The data generator class
+     * @return The corresponding entity manager
+     */
+    private EntityManager retrieveEntityManager(Class<?> cl) {
+        EntityManagerName entityManagerName = cl.getAnnotation(EntityManagerName.class);
+
+        if (entityManagerName != null) {
+            return getManager(entityManagerName.value());
+        }
+        else {
+            return getDefaultManager();
+        }
     }
 
     /**

@@ -1,7 +1,7 @@
 package io.probedock.junitee.dummy.complex;
 
 import io.probedock.junitee.generator.CompositeDataGenerator;
-import io.probedock.junitee.generator.InjectDataGenerator;
+import io.probedock.junitee.annotations.InjectDataGenerator;
 
 /**
  *

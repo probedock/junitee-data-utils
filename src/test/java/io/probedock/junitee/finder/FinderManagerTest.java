@@ -1,9 +1,6 @@
 package io.probedock.junitee.finder;
 
-import io.probedock.junitee.finder.Finder;
-import io.probedock.junitee.finder.FinderException;
-import io.probedock.junitee.finder.IFinder;
-import io.probedock.junitee.finder.FinderManager;
+import io.probedock.junitee.annotations.Finder;
 import io.probedock.junitee.dummy.DummyFinder;
 import io.probedock.junitee.dummy.FinderWithDao;
 import io.probedock.junitee.dummy.FinderWithInheritanceAndDaos;
@@ -12,6 +9,8 @@ import io.probedock.client.annotations.ProbeTestClass;
 import java.lang.annotation.Annotation;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+
+import io.probedock.junitee.utils.EntityManagerHolder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.Description;
@@ -31,13 +30,17 @@ public class FinderManagerTest {
 	private Statement statement;
 	
 	@Mock EntityManagerFactory entityManagerFactory;
-	
+
+	private EntityManagerHolder entityManagerHolder;
+
 	@Mock
 	private EntityManager entityManager;
 	
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
+
+		entityManagerHolder = new EntityManagerHolder(entityManagerFactory);
 		
 		when(entityManagerFactory.createEntityManager()).thenReturn(entityManager);
 	}
@@ -60,7 +63,7 @@ public class FinderManagerTest {
 		
 		Description description = Description.createSuiteDescription("Some description", annotation);
 		
-		FinderManager fm = new FinderManager(entityManagerFactory);
+		FinderManager fm = new FinderManager(entityManagerHolder);
 		fm.apply(statement, description).evaluate();
 
 		assertNotNull(fm.getFinder(DummyFinder.class));
@@ -83,7 +86,7 @@ public class FinderManagerTest {
 		};
 		
 		Description description = Description.createSuiteDescription("Some description", annotation);
-		FinderManager fm = new FinderManager(entityManagerFactory);
+		FinderManager fm = new FinderManager(entityManagerHolder);
 		
 		try {
 			fm.apply(statement, description).evaluate();
@@ -109,7 +112,7 @@ public class FinderManagerTest {
 		};
 		
 		Description description = Description.createSuiteDescription("Some description", annotation);
-		FinderManager fm = new FinderManager(entityManagerFactory);
+		FinderManager fm = new FinderManager(entityManagerHolder);
 		fm.apply(statement, description).evaluate();
 
 		assertNull(fm.getFinder(FinderWithDao.class).customDao);
@@ -139,7 +142,7 @@ public class FinderManagerTest {
 		};
 		
 		Description description = Description.createSuiteDescription("Some description", annotation);
-		FinderManager fm = new FinderManager(entityManagerFactory);
+		FinderManager fm = new FinderManager(entityManagerHolder);
 		fm.apply(statement, description).evaluate();
 
 		assertNotNull(fm.getFinder(FinderWithInheritanceAndDaos.class));

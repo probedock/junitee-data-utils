@@ -1,14 +1,12 @@
 package io.probedock.junitee.dependency;
 
-import io.probedock.junitee.dependency.UseMock;
-import io.probedock.junitee.dependency.DependencyInjector;
 import io.probedock.junitee.dummy.ImplementationDao;
 import io.probedock.junitee.dummy.DummyGeneratorWithDaos;
 import io.probedock.junitee.dummy.FirstDao;
 import io.probedock.junitee.dummy.GeneratorWithComplexDao;
 import io.probedock.junitee.dummy.GeneratorWithInheritance;
 import io.probedock.junitee.generator.IDataGenerator;
-import io.probedock.junitee.generator.InjectDataGenerator;
+import io.probedock.junitee.annotations.InjectDataGenerator;
 import io.probedock.client.annotations.ProbeTest;
 import io.probedock.client.annotations.ProbeTestClass;
 import javax.ejb.EJB;

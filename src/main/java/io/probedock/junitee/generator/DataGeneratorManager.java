@@ -1,11 +1,13 @@
 package io.probedock.junitee.generator;
 
+import io.probedock.junitee.annotations.DataGenerator;
 import io.probedock.junitee.dependency.DependencyInjector;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import javax.persistence.EntityManager;
 
+import io.probedock.junitee.utils.EntityManagerHolder;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -110,7 +112,7 @@ public class DataGeneratorManager implements TestRule {
 
 		// Retrieve all the data generators defined for the test method.
 		for (Class<? extends IDataGenerator> dataGeneratorClass : dgAnnotation.value()) {
-			EntityManager entityManager = retrieveEntityManager(dataGeneratorClass);
+			EntityManager entityManager = entityManagerHolder.retrieveEntityManagerFromDataGenerator(dataGeneratorClass);
 
 			// Check if the data generator is already instantiated.
 			if (!dataGenerators.containsKey(dataGeneratorClass)) {
@@ -182,23 +184,6 @@ public class DataGeneratorManager implements TestRule {
 			finally {
 				clearEntityManagers();
 			}
-		}
-	}
-
-	/**
-	 * Retrieve the entity manager corresponding to the data manager
-	 *
-	 * @param dataGeneratorClass The data generator class
-	 * @return The corresponding entity manager
-	 */
-	private EntityManager retrieveEntityManager(Class<? extends IDataGenerator> dataGeneratorClass) {
-		EntityManagerName entityManagerName = dataGeneratorClass.getAnnotation(EntityManagerName.class);
-
-		if (entityManagerName != null) {
-			return entityManagerHolder.getManager(entityManagerName.value());
-		}
-		else {
-			return entityManagerHolder.getDefaultManager();
 		}
 	}
 

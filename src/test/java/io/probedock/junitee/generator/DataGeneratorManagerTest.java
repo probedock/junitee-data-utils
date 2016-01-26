@@ -1,5 +1,6 @@
 package io.probedock.junitee.generator;
 
+import io.probedock.junitee.annotations.DataGenerator;
 import io.probedock.junitee.dummy.AbstractOrderGenerator;
 import io.probedock.junitee.dummy.BeforeCrashGenerator;
 import io.probedock.junitee.dummy.DataGeneratorWithDao;
@@ -13,6 +14,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 
+import io.probedock.junitee.utils.EntityManagerHolder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

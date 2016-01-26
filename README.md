@@ -30,7 +30,7 @@ In addition, you can inject any EJB inside your data generators and finders thro
 <dependency>
   <groupId>io.probedock.test</groupId>
   <artifactId>junitee-data-utils</artifactId>
-  <version>2.0.0</version>
+  <version>3.0.0</version>
   <scope>test</scope>
 </dependency>
 ```
@@ -52,20 +52,31 @@ In addition, you can inject any EJB inside your data generators and finders thro
   	protected FinderManager finderManager;
 
     public AbstractTest() {
-      // Create the persistence manager factory that refers to the persistence.xml
+      // Create the persistence manager factory that refers to a persistence.xml
       // and the persistence unit. This file must be present in test/resources/META-INF
-      EntityManagerFactory emf = Persistence.createEntityManagerFactory("test");
+      EntityManagerFactory defaultEntityManagerFactory = Persistence.createEntityManagerFactory("test");
+      
+      // Create another entity manager factory (optional). In fact, some cases requires to manipulate more
+      // than one DB at a time. Therefore, it is possible to annotate the data generators and/or the finders
+      // with @EntityManagerName to set the correct entity manager for the corresponding context.
+      EntityManagerFactory secondEntityManagerFactory = Persistence.createEntityManagerFactory("second");
 
-      // Instantiate the data manager rule with the factory
-  		dataGeneratorManager = new DataGeneratorManager(emf);
+      // Create the entity manager holder with the default entity manager factory
+      EntityManagerHolder emh = new EntityManagerHolder(defaultEntityManagerFactory);
+      
+      // Add the second entity manager factory to the holder
+      emh.addFactory("SECOND", secondEntityManagerFactory);
+
+      // Instantiate the data manager rule with the holder
+      dataGeneratorManager = new DataGeneratorManager(emh);
 
       // Same for the finder manager
-  		finderManager = new FinderManager(emf);
+  	  finderManager = new FinderManager(emh);
 
       // Finally, setup the chain rule to make sure the data generator rule is applied
       // before the finder manager rule.
       // Don't forget to assign the chain updated to the instance variable.
-		  chain = RuleChain.around(dataGeneratorManager).around(finderManager);
+      chain = RuleChain.around(dataGeneratorManager).around(finderManager);
     }
   }
   ```
@@ -96,8 +107,13 @@ In addition, you can inject any EJB inside your data generators and finders thro
   Then, we can implement the data generator like that.
 
   ```java
+  // If you want to use another entity manager, use this annotation and specify the name 
+  // you have chosen when you have setup the abstract test class
+  // @EntityManagerName("SECOND")
   public class UserDataGenerator implements IDataGenerator {
     // The persistence context. It will be injected by junitee-data-utils
+    // The default entity manager will be used if the annotation @EntityManagerName 
+    // is not present. Otherwise, the corresponding entity manager is used.
   	@PersistenceContext
   	private EntityManager em;
 
@@ -218,8 +234,12 @@ In addition, you can inject any EJB inside your data generators and finders thro
   ```java
   // The IFinder interface is used as a marker to let the framework manipulate the
   // finder and then to manage the injections.
+  // You also have the possibility to change the entity manager used for the finder
+  // @EntityManagerName("SECOND")
   public class UserFinder implements IFinder {
-    // The framework will inject the persistence context
+    // The framework will inject the persistence context. The default entity manager 
+    // will be used if the annotation @EntityManagerName is not present. Otherwise,
+    // the corresponding entity manager is used.
     @PersistenceContext
     private EntityManager em;
 
