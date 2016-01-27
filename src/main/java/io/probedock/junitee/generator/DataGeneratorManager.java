@@ -5,6 +5,8 @@ import io.probedock.junitee.dependency.DependencyInjector;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 
 import io.probedock.junitee.utils.EntityManagerHolder;
@@ -14,8 +16,6 @@ import net.sf.cglib.proxy.MethodProxy;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The data generator manager keep track of factories to ensure only one data generator type 
@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  * @author Laurent Prevost <laurent.prevost@lotaris.com>
  */
 public class DataGeneratorManager implements TestRule {
-	private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorManager.class);
+	private static final Logger LOG = Logger.getLogger(DataGeneratorManager.class.getCanonicalName());
 
 	/**
 	 * The configuration for the data manager
@@ -50,6 +50,9 @@ public class DataGeneratorManager implements TestRule {
 	 * @param entityManagerHolder The data manager config
 	 */
 	public DataGeneratorManager(EntityManagerHolder entityManagerHolder) {
+		if (!entityManagerHolder.isReady()) {
+			throw new IllegalArgumentException("The entity manager holder must be ready. Call build() on holder to make it ready.");
+		}
 		this.entityManagerHolder = entityManagerHolder;
 	}
 
@@ -58,9 +61,6 @@ public class DataGeneratorManager implements TestRule {
 		return new Statement() {
 			@Override
 			public void evaluate() throws Throwable {
-				// Be sure the config is ready to use
-				entityManagerHolder.build();
-
 				try {
 					generate(description);
 					testRunning = true;
@@ -114,6 +114,11 @@ public class DataGeneratorManager implements TestRule {
 		for (Class<? extends IDataGenerator> dataGeneratorClass : dgAnnotation.value()) {
 			EntityManager entityManager = entityManagerHolder.retrieveEntityManagerFromDataGenerator(dataGeneratorClass);
 
+			if (entityManager == null) {
+				throw new DataGeneratorException("Entity manager is null for " +
+					dataGeneratorClass.getCanonicalName() + ". Holder state: " + entityManagerHolder.toString());
+			}
+
 			// Check if the data generator is already instantiated.
 			if (!dataGenerators.containsKey(dataGeneratorClass)) {
 				try {
@@ -128,12 +133,12 @@ public class DataGeneratorManager implements TestRule {
 					dataGenerators.put(dataGeneratorClass, dataGenerator);
 				}
 				catch (Exception ex) {
-					LOG.error("Injection failed during the creation of the data generator: " + dataGeneratorClass.getCanonicalName(), ex);
+					LOG.log(Level.SEVERE, "Injection failed during the creation of the data generator: " + dataGeneratorClass.getCanonicalName(), ex);
 					throw new DataGeneratorException("Unable to instantiate the data generator " + dataGeneratorClass.getCanonicalName(), ex);
 				}
 			}
 			else {
-				LOG.error("The data generator [" + dataGeneratorClass.getCanonicalName() + "] is already instantiated. One instance of each data generator is allowed.");
+				LOG.log(Level.SEVERE, "The data generator [" + dataGeneratorClass.getCanonicalName() + "] is already instantiated. One instance of each data generator is allowed.");
 				throw new DataGeneratorException("The data generator " + dataGeneratorClass.getCanonicalName() + " is already registered. "
 					+ "Only one instance of each generator can be specified in the annotation.");
 			}
@@ -148,9 +153,9 @@ public class DataGeneratorManager implements TestRule {
 			commitTransaction();
 		}
 		catch (Exception e) {
-			LOG.error("Unkown error", e);
+			LOG.log(Level.SEVERE, "Unknown error", e);
 			rollbackTransaction();
-			throw new DataGeneratorException("An unexpected error occured during the data generation.", e);
+			throw new DataGeneratorException("An unexpected error occurred during the data generation. Holder state: " + entityManagerHolder.toString(), e);
 		}
 		finally {
 			clearEntityManagers();
@@ -177,9 +182,9 @@ public class DataGeneratorManager implements TestRule {
 				commitTransaction();
 			}
 			catch (Exception e) {
-				LOG.error("Unknow error", e);
+				LOG.log(Level.SEVERE, "Unknown error", e);
 				rollbackTransaction();
-				throw new DataGeneratorException("An unexpected error occured during cleanup phase.", e);
+				throw new DataGeneratorException("An unexpected error occurred during cleanup phase.", e);
 			}
 			finally {
 				clearEntityManagers();

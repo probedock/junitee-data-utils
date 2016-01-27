@@ -67,6 +67,10 @@ In addition, you can inject any EJB inside your data generators and finders thro
       // Add the second entity manager factory to the holder
       emh.addFactory("SECOND", secondEntityManagerFactory);
 
+      // Once your holder is ready, call the build method on it. If not, you will get
+      // exceptions when creating the datamanager and/or finder
+      emh.build();
+
       // Instantiate the data manager rule with the holder
       dataGeneratorManager = new DataGeneratorManager(emh);
 
@@ -76,7 +80,7 @@ In addition, you can inject any EJB inside your data generators and finders thro
       // Finally, setup the chain rule to make sure the data generator rule is applied
       // before the finder manager rule.
       // Don't forget to assign the chain updated to the instance variable.
-      chain = RuleChain.around(dataGeneratorManager).around(finderManager);
+      chain = RuleChain.emptyRuleChain().around(dataGeneratorManager).around(finderManager);
     }
   }
   ```

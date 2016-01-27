@@ -1,5 +1,6 @@
 package io.probedock.junitee.utils;
 
+import io.probedock.junitee.finder.FinderManager;
 import io.probedock.junitee.finder.IFinder;
 import io.probedock.junitee.annotations.EntityManagerName;
 import io.probedock.junitee.generator.IDataGenerator;
@@ -31,9 +32,9 @@ public class EntityManagerHolder {
     private final Map<String, EntityManager> managers = new HashMap<>();
 
     /**
-     * Flag to only build once
+     * Flag to ensure the holder is ready
      */
-    private boolean built = false;
+    private boolean ready = false;
 
     /**
      * Constructor
@@ -49,15 +50,29 @@ public class EntityManagerHolder {
     }
 
     /**
-     * Build the holder to be ready to use in different managers
+     * @return Check if the holder is ready to use
      */
-    public synchronized void build() {
-        if (!built) {
-            for (Map.Entry<String, EntityManagerFactory> e : factories.entrySet()) {
-                managers.put(e.getKey(), e.getValue().createEntityManager());
-            }
-            built = true;
+    public boolean isReady() {
+        return ready;
+    }
+
+    /**
+     * Build the holder to be ready to use in different managers
+     *
+     * @return this
+     */
+    public EntityManagerHolder build() {
+        if (ready) {
+            throw new IllegalStateException("You cannot call this method more than once.");
         }
+
+        for (Map.Entry<String, EntityManagerFactory> e : factories.entrySet()) {
+            managers.put(e.getKey(), e.getValue().createEntityManager());
+        }
+
+        ready = true;
+
+        return this;
     }
 
     /**
@@ -69,6 +84,10 @@ public class EntityManagerHolder {
      * @return This
      */
     public EntityManagerHolder addFactory(String name, EntityManagerFactory factory) {
+        if (ready) {
+            throw new IllegalStateException("You cannot add another factory once the holder is ready to be used.");
+        }
+
         if (DEFAULT.equalsIgnoreCase(name)) {
             throw new IllegalArgumentException("Reserved named: " + DEFAULT);
         }
@@ -76,26 +95,6 @@ public class EntityManagerHolder {
         factories.put(name, factory);
 
         return this;
-    }
-
-    /**
-     * @return Retrieve the default manager
-     */
-    public EntityManager getDefaultManager() {
-        return managers.get(DEFAULT);
-    }
-
-    /**
-     * @param name The name of the factory
-     * @return The factory or null if not present
-     */
-    public EntityManager getManager(String name) {
-        // Cannot retrieve the default factory through this getter
-        if (DEFAULT.equalsIgnoreCase(name)) {
-            return null;
-        }
-
-        return managers.get(name);
     }
 
     /**
@@ -127,11 +126,11 @@ public class EntityManagerHolder {
     private EntityManager retrieveEntityManager(Class<?> cl) {
         EntityManagerName entityManagerName = cl.getAnnotation(EntityManagerName.class);
 
-        if (entityManagerName != null) {
-            return getManager(entityManagerName.value());
+        if (entityManagerName != null && !DEFAULT.equalsIgnoreCase(entityManagerName.value())) {
+            return managers.get(entityManagerName.value());
         }
         else {
-            return getDefaultManager();
+            return managers.get(DEFAULT);
         }
     }
 
@@ -140,5 +139,26 @@ public class EntityManagerHolder {
      */
     public Collection<EntityManager> getManagers() {
         return managers.values();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Factories: [");
+
+        for (Map.Entry<String, EntityManagerFactory> e : factories.entrySet()) {
+            sb.append(e.getKey()).append(": ").append(e.getValue()).append(", ");
+        }
+
+        sb.append("], Managers: [");
+
+        for (Map.Entry<String, EntityManager> e : managers.entrySet()) {
+            sb.append(e.getKey()).append(": ").append(e.getValue()).append(", ");
+        }
+
+        sb.append("]");
+
+        return sb.toString();
     }
 }

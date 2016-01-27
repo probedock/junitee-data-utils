@@ -1,6 +1,8 @@
 package io.probedock.junitee.dependency;
 
 import io.probedock.junitee.annotations.InjectDataGenerator;
+import io.probedock.junitee.annotations.UseMock;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;

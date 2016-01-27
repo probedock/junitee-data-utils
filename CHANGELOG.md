@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.1.0 - January 27, 2016
+
+* **Breaking**: Fixed miss-conception issue with the entity manager holder injected to early in the data manager and finder manager
+* **Breaking**: Removed slf4j
+
+## v3.0.1, v3.0.2 - January 26-27, 2016
+
+* Minor changes to identify tricky bug
+
 ## v3.0.0 - January 26, 2016
 
 * **Breaking**: Extended the possibility to use more than one entity manager to the finders

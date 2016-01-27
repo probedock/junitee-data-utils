@@ -1,5 +1,6 @@
 package io.probedock.junitee.dependency;
 
+import io.probedock.junitee.annotations.UseMock;
 import io.probedock.junitee.dummy.ImplementationDao;
 import io.probedock.junitee.dummy.DummyGeneratorWithDaos;
 import io.probedock.junitee.dummy.FirstDao;

@@ -6,6 +6,8 @@ import io.probedock.junitee.dependency.DependencyInjector;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 
 import io.probedock.junitee.utils.EntityManagerHolder;
@@ -15,8 +17,6 @@ import net.sf.cglib.proxy.MethodProxy;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The finder manager keep track of factories to ensure only one finder type 
@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * @author Laurent Prevost <laurent.prevost@probedock.io>
  */
 public class FinderManager implements TestRule {
-	private static final Logger LOG = LoggerFactory.getLogger(DataGeneratorManager.class);
+	private static final Logger LOG = Logger.getLogger(DataGeneratorManager.class.getCanonicalName());
 	
 	/**
 	 * Entity manager holder to manage the entity managers and their factories
@@ -45,8 +45,10 @@ public class FinderManager implements TestRule {
 	 * @param entityManagerHolder Entity manager holder to use
 	 */
 	public FinderManager(EntityManagerHolder entityManagerHolder) {
+		if (!entityManagerHolder.isReady()) {
+			throw new IllegalArgumentException("The entity manager holder must be ready. Call build() on holder to make it ready.");
+		}
 		this.entityManagerHolder = entityManagerHolder;
-		this.entityManagerHolder.build();
 	}
 
 	@Override
@@ -108,7 +110,7 @@ public class FinderManager implements TestRule {
 				finders.put(finderClass, (IFinder) Enhancer.create(finderClass, new Class[] {IFinder.class}, new FinderCallback(entityManager)));
 			}
 			else {
-				LOG.error("The finder [" + finderClass.getCanonicalName() + "] is already instantiated. One instance of each finder is allowed.");
+				LOG.log(Level.SEVERE, "The finder [" + finderClass.getCanonicalName() + "] is already instantiated. One instance of each finder is allowed.");
 				throw new FinderException("The finder " + finderClass.getCanonicalName() + " is already registered. "
 					+ "Only one instance of each finder can be specified in the annotation.");
 			}

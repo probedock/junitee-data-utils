@@ -40,9 +40,9 @@ public class FinderManagerTest {
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
 
-		entityManagerHolder = new EntityManagerHolder(entityManagerFactory);
-		
 		when(entityManagerFactory.createEntityManager()).thenReturn(entityManager);
+
+		entityManagerHolder = new EntityManagerHolder(entityManagerFactory).build();
 	}
 
 	@Test

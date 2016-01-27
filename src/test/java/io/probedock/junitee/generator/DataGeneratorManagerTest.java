@@ -49,10 +49,10 @@ public class DataGeneratorManagerTest {
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
 
-		entityManagerHolder = new EntityManagerHolder(entityManagerFactory);
-
 		when(entityManagerFactory.createEntityManager()).thenReturn(entityManager);
 		when(entityManager.getTransaction()).thenReturn(entityTransaction);
+
+		entityManagerHolder = new EntityManagerHolder(entityManagerFactory).build();
 	}
 
 	@Test
